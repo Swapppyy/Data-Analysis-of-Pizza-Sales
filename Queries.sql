@@ -1,203 +1,199 @@
+-- Create the pizza_sales database
 CREATE DATABASE pizza_sales;
 
+-- Use the pizza_sales database
 USE pizza_sales;
 
-CREATE TABLE orders(
-
-order_id INT PRIMARY KEY,
-DATE TEXT,
-TIME TEXT
+-- Create the 'orders' table
+CREATE TABLE orders (
+    order_id INT PRIMARY KEY,
+    DATE TEXT,
+    TIME TEXT
 );
 
+-- Load data from CSV into the 'orders' table
 LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/orders.csv'
 INTO TABLE orders
-FIELDS terminated by ',' OPTIONALLY ENCLOSED BY '"'
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 LINES;
 
-select * from order_details;
-
-Create table order_details(
-
-order_details int primary key,
-order_id int,
-pizza_id text,
-quantity int
-
-
+-- Create the 'order_details' table
+CREATE TABLE order_details (
+    order_details_id INT PRIMARY KEY,
+    order_id INT,
+    pizza_id TEXT,
+    quantity INT
 );
 
-
+-- Load data from CSV into the 'order_details' table
 LOAD DATA INFILE 'C:/ProgramData/MySQL/MySQL Server 8.0/Uploads/order_details.csv'
 INTO TABLE order_details
-FIELDS terminated by ',' OPTIONALLY ENCLOSED BY '"'
+FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '"'
 LINES TERMINATED BY '\n'
 IGNORE 1 LINES;
 
+-- Create a view 'pizza_details'
+CREATE VIEW pizza_details AS
+SELECT
+    p.pizza_id,
+    p.pizza_type_id,
+    pt.name,
+    pt.category,
+    p.size,
+    p.price,
+    pt.ingredients
+FROM
+    pizzas p
+JOIN
+    pizza_types pt ON pt.pizza_type_id = p.pizza_type_id;
 
+-- Display the contents of 'pizza_details' view
+SELECT * FROM pizza_details;
 
-create view pizza_details as 
-select p.pizza_id, p.pizza_type_id, pt.name,pt.category,p.size, p.price, pt.ingredients
+-- Display the contents of 'orders' table
+SELECT * FROM orders;
 
-from pizzas p
-join pizza_types pt
-on pt.pizza_type_id = p.pizza_type_id;
-
-select * from pizza_details;
-select * from orders;
-
+-- Modify the 'date' and 'time' columns in the 'orders' table
+ALTER TABLE orders
+MODIFY date DATE;
 
 ALTER TABLE orders
-modify date DATE;
+MODIFY time TIME;
 
-ALTER TABLE orders
-modify time TIME;
+-- Calculate total revenue
+SELECT ROUND(SUM(od.quantity * p.price), 2) AS total_revenue
+FROM order_details od
+JOIN pizza_details p ON od.pizza_id = p.pizza_id;
 
--- total revenue --
+-- Calculate total pizzas sold
+SELECT SUM(od.quantity) AS pizza_sold
+FROM order_details od;
 
-select round(sum(od.quantity * p.price),2) as total_revenue
-from order_details od
-join pizza_details p 
-on od.pizza_id = p.pizza_id;
+-- Calculate total orders
+SELECT COUNT(DISTINCT(order_id)) AS total_orders
+FROM order_details;
 
+-- Calculate average order value
+SELECT ROUND(SUM(od.quantity * p.price) / COUNT(DISTINCT(od.order_id)), 2) AS avg_order_value
+FROM order_details od
+JOIN pizza_details p ON od.pizza_id = p.pizza_id;
 
--- total pizzas sold
+-- Calculate average number of pizza per order
+SELECT ROUND(SUM(od.quantity) / COUNT(DISTINCT(od.order_id)), 0) AS avg_no_pizza_per_order
+FROM order_details od;
 
-select sum(od.quantity) as pizza_sold
-from order_details od; 
+-- Calculate total revenue and number of orders per category
+SELECT
+    p.category,
+    ROUND(SUM(od.quantity * p.price), 2) AS total_revenue,
+    COUNT(DISTINCT(od.order_id)) AS total_orders
+FROM order_details od
+JOIN pizza_details p ON p.pizza_id = od.pizza_id
+GROUP BY p.category;
 
--- total orders
+-- Calculate total revenue and number of orders per size
+SELECT
+    p.size,
+    ROUND(SUM(od.quantity * p.price), 2) AS total_revenue,
+    COUNT(DISTINCT(od.order_id)) AS total_orders
+FROM order_details od
+JOIN pizza_details p ON p.pizza_id = od.pizza_id
+GROUP BY p.size;
 
-select count(distinct(order_id)) as total_orders
-from order_details;
+-- Calculate hourly trend of orders and revenue of pizza
+SELECT
+    CASE
+        WHEN HOUR(o.time) BETWEEN 9 AND 12 THEN 'Late Morning'
+        WHEN HOUR(o.time) BETWEEN 12 AND 15 THEN 'Lunch'
+        WHEN HOUR(o.time) BETWEEN 15 AND 18 THEN 'Mid Afternoon'
+        WHEN HOUR(o.time) BETWEEN 18 AND 21 THEN 'Dinner'
+        WHEN HOUR(o.time) BETWEEN 21 AND 23 THEN 'Late Night'
+        ELSE 'Others'
+    END AS meal_time,
+    COUNT(DISTINCT(od.order_id)) AS total_orders
+FROM order_details od
+JOIN orders o ON o.order_id = od.order_id
+GROUP BY meal_time
+ORDER BY total_orders DESC;
 
--- average order value
+-- Calculate weekdays trend
+SELECT
+    DAYNAME(o.date) AS day_name,
+    COUNT(DISTINCT(od.order_id)) AS total_orders
+FROM order_details od
+JOIN orders o ON o.order_id = od.order_id
+GROUP BY DAYNAME(o.date)
+ORDER BY total_orders DESC;
 
-select round(SUM(od.quantity * p.price ) / count(distinct(od.order_id)),2) as avg_order_value
-from order_details od
-join pizza_details p 
-on od.pizza_id = p.pizza_id; 
+-- Calculate monthwise trend
+SELECT
+    MONTHNAME(o.date) AS month_name,
+    COUNT(DISTINCT(od.order_id)) AS total_orders
+FROM order_details od
+JOIN orders o ON o.order_id = od.order_id
+GROUP BY MONTHNAME(o.date)
+ORDER BY total_orders DESC;
 
--- average number of pizza per order
+-- Calculate most ordered pizza
+SELECT
+    p.name,
+    p.size,
+    COUNT(od.order_id) AS count_pizzas
+FROM order_details od
+JOIN pizza_details p ON od.pizza_id = p.pizza_id
+GROUP BY p.name, p.size
+ORDER BY count_pizzas DESC;
 
-select round(sum(od.quantity) / count(distinct(od.order_id)),0) as avg_no_pizza_per_order
-from order_details od;
+-- Calculate top 5 pizzas by revenue
+SELECT
+    p.name,
+    ROUND(SUM(od.quantity * p.price), 2) AS total_revenue
+FROM order_details od
+JOIN pizza_details p ON od.pizza_id = p.pizza_id
+GROUP BY p.name
+ORDER BY total_revenue DESC;
 
+-- Calculate top pizza by sale
+SELECT
+    p.name,
+    SUM(od.quantity) AS total_sales
+FROM order_details od
+JOIN pizza_details p ON od.pizza_id = p.pizza_id
+GROUP BY p.name
+ORDER BY total_sales DESC;
 
--- total revenue and no.of orders per category
+-- Pizza analysis
+SELECT
+    p.name,
+    p.price
+FROM pizza_details p
+ORDER BY p.price DESC;
 
-select p.category, round(sum(od.quantity * p.price),2) as total_revenue, count(distinct(od.order_id)) as total_orders
-from order_details od
-join pizza_details p 
-on p.pizza_id = od.pizza_id
-group by p.category;
+-- Create a temporary table for numbers
+CREATE TEMPORARY TABLE numbers AS (
+    SELECT 1 AS n UNION ALL
+    SELECT 2 UNION ALL
+    SELECT 3 UNION ALL
+    SELECT 4 UNION ALL
+    SELECT 5 UNION ALL
+    SELECT 6 UNION ALL
+    SELECT 7 UNION ALL
+    SELECT 8 UNION ALL
+    SELECT 9 UNION ALL
+    SELECT 10
+);
 
-
--- total revenue and number of orders per size
-
-select p.size, round(sum(od.quantity * p.price),2) as total_revenue, count(distinct(od.order_id)) as total_orders
-from order_details od
-join pizza_details p 
-on p.pizza_id = od.pizza_id
-group by p.size;
-
-
--- hourly, daily, monthly trend of orders and revenue of pizza
-
-select 
-case 
-when hour(o.time) between 9 and 12 then 'Late Morning'
-when hour(o.time) between 12 and 15 then 'Lunch'
-when hour(o.time) between 15 and 18 then 'Mid Afternoon'
-when hour(o.time) between 18 and 21 then 'Dinner'
-when hour(o.time) between 21 and 23 then 'Late Night'
-else 'others'
-end as meal_time, count(distinct(od.order_id)) as total_orders
-from order_details od
-join orders o 
-on o.order_id = od.order_id
-group by meal_time
-order by total_orders desc;
-
--- weekdays
-
-select dayname(o.date) AS day_name, count(distinct(od.order_id)) as total_orders
-from order_details od
-join orders o
-on o.order_id = od.order_id
-group by dayname(o.date)
-order by total_orders desc;
-
--- monthwise trend 
-
-select monthname(o.date) AS month_name, count(distinct(od.order_id)) as total_orders
-from order_details od
-join orders o
-on o.order_id = od.order_id
-group by monthname(o.date)
-order by total_orders desc;
-
--- most_ordered_pizza || we can also calculate irrespective of size (just remove p.size from the query) || (Add limit at the end to see top categories)
-
-select p.name, p.size, count(od.order_id) as count_pizzas
-from order_details od
-join pizza_details p 
-on od.pizza_id = p.pizza_id
-group by p.name, p.size
-order by count_pizzas desc;
-
--- top 5 pizzas by revenue
-
-select p.name, round(sum(od.quantity * p.price ),2) as total_revenue
-from order_details od 
-join pizza_details p
-on od.pizza_id = p.pizza_id
-group by p.name
-order by total_revenue desc;
-
--- top pizza by sale
-
-select p.name, sum(od.quantity ) as total_sales
-from order_details od 
-join pizza_details p
-on od.pizza_id = p.pizza_id
-group by p.name
-order by total_sales desc;
-
--- pizza analysis
-
-select p.name, p.price
-from pizza_details p
-order by p.price desc;
-
--- top used ingredients
-
-create temporary table numbers as (
-
-	select 1 as n union all
-    select 2 union all
-    select 3 union all
-    select 4 union all
-    select 5 union all
-    select 6 union all
-    select 7 union all
-    select 8 union all
-    select 9 union all
-    select 10
-    );
-    
-    
-    select ingredient, count(ingredient) as ingredient_count
-    from(
-    select substring_index(substring_index(ingredients, ',', n), ',', -1) as ingredient
-    from order_details od
-    join pizza_details p
-    on p.pizza_id = od.pizza_id
-    join numbers on char_length(ingredients) - char_length(replace(ingredients, ',', '')) >= n-1
-    ) as subquery
-    
-group by ingredient
-order by ingredient_count desc
-
-
--- 
+-- Calculate top used ingredients
+SELECT
+    ingredient,
+    COUNT(ingredient) AS ingredient_count
+FROM (
+    SELECT
+        SUBSTRING_INDEX(SUBSTRING_INDEX(p.ingredients, ',', n), ',', -1) AS ingredient
+    FROM order_details od
+    JOIN pizza_details p ON p.pizza_id = od.pizza_id
+    JOIN numbers ON CHAR_LENGTH(p.ingredients) - CHAR_LENGTH(REPLACE(p.ingredients, ',', '')) >= n - 1
+) AS subquery
+GROUP BY ingredient
+ORDER BY ingredient_count DESC;
