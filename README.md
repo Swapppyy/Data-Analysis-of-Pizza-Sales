@@ -10,11 +10,11 @@ View my Work over here: <a href="https://github.com/Swapppyy/Data-Analysis-of-Pi
 
 ### My Insights:
 
-- Total 49574 pizzas are sole
+- Total 49574 pizzas are sold
 
 - Average order value is around 38.31$
 
-- Pizzas are ordered more in the afternoon for their meal.
+- Pizzas are ordered more in the afternoon as their lunch meal.
 
 - July and May are the months where the maximum amount of orders are placed.
 
