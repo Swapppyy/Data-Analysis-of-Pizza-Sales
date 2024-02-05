@@ -10,7 +10,19 @@ View my Work over here: <a href="https://github.com/Swapppyy/Data-Analysis-of-Pi
 
 ### My Insights:
 
--      
+- Total 49574 pizzas are sole
+
+- Average order value is around 38.31$
+
+- Pizzas are ordered more in the afternoon for their meal.
+
+- July and May are the months where the maximum amount of orders are placed.
+
+- The most ordered Pizza is the Big Meat Pizza (Small)
+
+- The Thai chicken pizza generates a whooping revenue of 43435$ but the most sold pizza is The classic Deluxe Pizza
+
+- Garlic, Tomatoes and Red Onions are the ingredients which are mostly used while making pizzas.
 
 
 Checkout my Live Dashboard published over here: <a href="https://www.novypro.com/profile_projects/swapnildeore" target="_blank"><code>Pizza Sales Dashboard</code></a>
