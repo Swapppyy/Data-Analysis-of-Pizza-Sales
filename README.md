@@ -25,8 +25,6 @@ View my Work over here: <a href="https://github.com/Swapppyy/Data-Analysis-of-Pi
 - Garlic, Tomatoes and Red Onions are the ingredients which are mostly used while making pizzas.
 
 <br>
-<br>
-
 
 Checkout my Live Dashboard published over here: <a href="https://www.novypro.com/profile_projects/swapnildeore" target="_blank"><code>Pizza Sales Dashboard</code></a>
 
